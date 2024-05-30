@@ -1,0 +1,59 @@
+function transferirDados() {
+  
+  InsereIndicador('Larga'); 
+  
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetLarga = spreadsheet.getSheetByName('Larga');
+  const sheetDestino = spreadsheet.getSheetByName('Longa');
+
+  const dados = sheetLarga.getDataRange().getValues();
+  const cabecalho = dados[0];
+  const dadosTransferir = [];
+  const indicesTransferidos = [];
+  const dataHoraAtual = new Date();
+
+  
+  for (let i = 1; i < dados.length; i++) {
+    const linha = dados[i];
+    // Verifica se a linha já foi transferida (célula "Transferido" não está vazia)
+    if (linha[linha.length - 1] !== "") { 
+      continue; // Pula para a próxima linha se já foi transferida
+    }
+
+    const dataCompra = linha[0];
+    const local = linha[1];
+
+    for (let j = 2; j < linha.length - 1; j++) { // Ignora a última coluna ("Transferido")
+      const fruta = cabecalho[j];
+      const quantidade = linha[j];
+
+      if (quantidade > 0) {
+        dadosTransferir.push([dataCompra, local, fruta, quantidade, dataHoraAtual]);
+        indicesTransferidos.push(i); // Marca a linha como transferida
+      }
+    }
+  }
+
+  if(dadosTransferir.length >0) sheetDestino.getRange(sheetDestino.getLastRow() + 1, 1, dadosTransferir.length, 5).setValues(dadosTransferir);
+
+  // Atualiza a coluna "Transferido" na página "Larga" com data e hora
+  for (const indice of indicesTransferidos) {
+    sheetLarga.getRange(indice + 1, sheetLarga.getLastColumn()).setValue(dataHoraAtual);
+  }
+}
+
+function InsereIndicador(nomePagina) {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = spreadsheet.getSheetByName(nomePagina);
+  const dados = sheet.getDataRange().getValues();
+
+  let ultimaColuna = dados[0].length;
+  if (dados[0][ultimaColuna - 1] != "Transferido") {
+    for (let i = 0; i < dados.length; i++) {
+      dados[i][ultimaColuna] = ""; // Deixa a célula vazia inicialmente
+    }
+    dados[0][ultimaColuna] = "Transferido";
+    sheet.getRange(1, 1, dados.length, dados[0].length).setValues(dados); // Atualiza a planilha com os novos dados
+  }
+}
+
